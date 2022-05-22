@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 image = "images/download.jpg"
 img = cv2.imread(image)
 
+#comment
 
 # display full size image function
 def display(im_path):

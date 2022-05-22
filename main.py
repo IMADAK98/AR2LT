@@ -1,70 +1,43 @@
 import cv2
-import matplotlib.pyplot as plt
+import numpy as np
+#import image
+image = cv2.imread('images/Arabic.jpg')
+cv2.imshow('orig',image)
+cv2.waitKey(0)
 
-image = "images/download.jpg"
-img = cv2.imread(image)
+#grayscale
+gray = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
+cv2.imshow('gray',gray)
+cv2.waitKey(0)
 
-# display full size image function
-def display(im_path):
-    dpi = 80
-    im_data = plt.imread(im_path)
+#binary
+ret,thresh = cv2.threshold(gray,127,255,cv2.THRESH_BINARY_INV)
+cv2.imshow('second',thresh)
+cv2.waitKey(0)
 
-    height, width = im_data.shape[:2]
+#dilation
+kernel = np.ones((5,100), np.uint8)
+img_dilation = cv2.dilate(thresh, kernel, iterations=1)
+cv2.imshow('dilated',img_dilation)
+cv2.waitKey(0)
 
-    # What size does the figure need to be in inches to fit the image?
-    figsize = width / float(dpi), height / float(dpi)
+#find contours
+(ctrs, hier) = cv2.findContours(img_dilation.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    # Create a figure of the right size with one axes that takes up the full figure
-    fig = plt.figure(figsize=figsize)
-    ax = fig.add_axes([0, 0, 1, 1])
+#sort contours
+sorted_ctrs = sorted(ctrs, key=lambda ctr: cv2.boundingRect(ctr)[0])
 
-    # Hide spines, ticks, etc.
-    ax.axis('off')
+for i, ctr in enumerate(sorted_ctrs):
+    # Get bounding box
+    x, y, w, h = cv2.boundingRect(ctr)
 
-    # Display the image.
-    ax.imshow(im_data, cmap='gray')
+    # Getting ROI
+    roi = image[y:y+h, x:x+w]
 
-    plt.show()
+    # show ROI
+    cv2.imshow('segment no:'+str(i),roi)
+    cv2.rectangle(image,(x,y),( x + w, y + h ),(90,0,255),2)
+    cv2.waitKey(0)
 
-
-# displaying the orginal function
-display(image)
-
-# inverting image
-
-inverted_image = cv2.bitwise_not(img)
-cv2.imwrite("temp/Inverted.jpg", inverted_image)
-display("temp/Inverted.jpg")  # displaying the inverted function
-
-
-# Binarizaion
-#1-gray conversion
-
-def grayscale(image):
- return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-
-gray_image = grayscale(img)
-cv2.imwrite("temp/Gray.jpg", gray_image)
-display("temp/Gray.jpg")
-
-#2-binary conversion
-
-thresh,im_bw=cv2.threshold(gray_image,120,255,cv2.THRESH_BINARY)
-cv2.imwrite("temp/bw_image.jpg",im_bw)
-display("temp/bw_image.jpg")
-
-#3-Noise removal
-
-def noise_removal(image):
-    import numpy as np
-    kernel=np.ones((1,1),np.uint8)
-    image=cv2.dilate(image,kernel,iterations=1)
-    kernel=np.ones((1,1),np.uint8)
-    image=cv2.erode(image,kernel,iterations=1)
-    image=cv2.morphologyEx(image,cv2.MORPH_CLOSE,kernel)
-    image=cv2.medianBlur(image,3)
-    return (image)
-no_noise=noise_removal(im_bw)
-cv2.imwrite("temp/no_noise.jpg",no_noise)
-display("temp/no_noise.jpg")
+cv2.imshow('marked areas',image)
+cv2.waitKey(0)
